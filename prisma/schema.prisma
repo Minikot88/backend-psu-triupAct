@@ -1,0 +1,578 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+id String @id @default(cuid())
+email String @unique
+passwordHash String
+createdAt DateTime @default(now())
+updatedAt DateTime @updatedAt
+sessions ApiSession[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  username  String?
+  token     String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model ApiSession {
+id String @id @default(cuid())
+provider String // e.g. "TRIUP"
+accessToken String
+expiresAt DateTime?
+userId String
+user User @relation(fields: [userId], references: [id])
+createdAt DateTime @default(now())
+updatedAt DateTime @updatedAt
+}
+
+model cofunders {
+  cofun_id   Int    @id
+  cofun_name String
+
+  @@map("cofunders")
+}
+
+model departments {
+  dep_id   Int    @id
+  dep_name String
+
+  @@map("departments")
+}
+
+model funders {
+  fun_id    Int    @id
+  fun_title String
+
+  @@map("funders")
+}
+
+model province {
+  prov_id   Int    @id
+  prov_name String
+
+  @@map("province")
+}
+
+model educationlevels {
+  edu_id    Int    @id
+  edu_title String
+
+  @@map("educationlevels")
+}
+
+model findingdetaillists {
+  find_id    Int    @id
+  find_title String
+
+  @@map("findingdetaillists")
+}
+
+model groupstudies {
+  id    Int    @id
+  title String
+
+  @@map("groupstudies")
+}
+
+model mainstudies {
+  id    Int    @id
+  title String
+
+  @@map("mainstudies")
+}
+
+model roles {
+  id      Int    @id
+  name_th String
+
+  @@map("roles")
+}
+
+model substudies {
+  id    Int    @id
+  title String
+
+  @@map("substudies")
+}
+
+model target_audiences {
+  id    Int    @id
+  title String
+
+  @@map("target_audiences")
+}
+
+model time_settings {
+  id    Int    @id
+  title String
+
+  @@map("time_settings")
+}
+
+model prefixs {
+  id                           Int                   @id
+  prefix_name                  String
+  form_research_owner_coPrefix form_research_owner[] @relation("co_prefix")
+  form_research_owner_prefix   form_research_owner[] @relation("owner_prefix")
+  form_research_plan_prefix    form_research_plan[]
+
+  @@map("prefixs")
+}
+
+model users {
+  user_id         Int     @id
+  email           String
+  card_id         String?
+  default_role_id String?
+  fullname        String?
+
+  @@map("users")
+}
+
+model users_researcher {
+  user_id         Int     @id
+  email           String
+  card_id         String?
+  default_role_id String?
+  fullname        String?
+  department_id   String?
+  department_name String?
+
+  @@map("users/researcher")
+}
+
+model form_new_findings {
+  form_new_id          Int                              @id
+  report_code          String
+  report_title_th      String?
+  report_title_en      String?
+  createBy             Int?
+  form_status_id       Int?
+  sla_at               DateTime?                        @db.Timestamp(6)
+  sla_by               Int?
+  status               String?
+  extends              form_extend[]                    @relation("Extend_To_Finding")
+  form_extend_plan_tbl form_extend_id_form_plan_table[]
+  form_research_owners form_research_owner[]
+  form_research_plans  form_research_plan[]
+  form_utilizations    form_utilization[]
+
+  @@map("form_new_findings")
+}
+
+model form_allocate {
+  form_allocate_id                             Int                           @id
+  start_date                                   DateTime                      @db.Date
+  end_date                                     DateTime                      @db.Date
+  allocate_code                                String
+  form_utilization_id                          Int                           @default(0)
+  report_title_th                              String?
+  create_by                                    Int?
+  form_allocate_id_row                         form_allocate_id?
+  data_detail                                  form_allocate_id_data_detail? @relation(fields: [form_allocate_id_data_detailForm_allocate_id], references: [form_allocate_id])
+  form_allocate_id_data_detailForm_allocate_id Int?
+
+  @@map("form_allocate")
+}
+
+model form_allocate_id {
+  form_allocate_id    Int                            @id
+  form_new_id         Int?
+  form_own            String?
+  uti_data            String?
+  form_data           String?
+  form_uti_table      String?
+  new_repeater        String?
+  form_utilization_id String?
+  form_allocate       form_allocate                  @relation(fields: [form_allocate_id], references: [form_allocate_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_faid_to_allocate")
+  data_detail         form_allocate_id_data_detail?
+  options             form_allocate_id_form_own_id[]
+
+  @@map("form_allocate/id")
+}
+
+model form_allocate_id_form_own_id {
+  id                   Int               @id @default(autoincrement())
+  form_allocate_id     Int?
+  option_key           String?
+  option_value         String?
+  form_allocate_id_row form_allocate_id? @relation(fields: [form_allocate_id], references: [form_allocate_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_fafo_to_faid")
+
+  @@unique([form_allocate_id, option_key], map: "form_allocate/id/form_own_id_form_allocate_id_option_key_idx")
+  @@map("form_allocate/id/form_own_id")
+}
+
+model form_allocate_id_data_detail {
+  form_allocate_id    Int     @id
+  form_new_id         Int?
+  form_utilization_id String? @db.Text
+  form_own_id         Int?
+  allocate_code       String? @db.Text
+
+  form_allocate_id_row form_allocate_id @relation(fields: [form_allocate_id], references: [form_allocate_id], map: "fk_faid_detail_to_faid")
+  form_allocate        form_allocate[]
+
+  @@map("form_allocate/id/data_detail")
+}
+
+model form_extend {
+  form_extend_id      Int                  @id
+  extend_status       Int?
+  extend_code         String
+  form_own_id         Int?
+  extend_check_status Int?
+  extend_start_date   DateTime?            @db.Date
+  extend_end_date     DateTime?            @db.Date
+  form_new_id         Int?
+  report_code         String?
+  report_title_th     String?
+  create_by           Int?
+  finding             form_new_findings?   @relation("Extend_To_Finding", fields: [form_new_id], references: [form_new_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_extend_finding")
+  owner               form_research_owner? @relation(fields: [form_own_id], references: [form_own_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_extend_owner")
+
+  @@map("form_extend")
+}
+
+model form_extend_id {
+  form_extend_id Int                             @id
+  form_plan_id   Int?
+  plan           form_extend_id_form_plan_table? @relation(fields: [form_plan_id], references: [form_plan_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_extendid_plan")
+
+  @@map("form_extend/id")
+}
+
+model form_extend_id_form_plan_table {
+  form_plan_id          Int                                           @id
+  form_plan_form_new_id Int?
+  form_plan_code        String?
+  form_plan_fullname    String?
+  extend_id             form_extend_id[]
+  finding               form_new_findings?                            @relation(fields: [form_plan_form_new_id], references: [form_new_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_ext_plan_to_finding")
+  files                 form_extend_id_form_plan_table_file_uploads[]
+
+  @@map("form_extend/id/form_plan_table")
+}
+
+model form_extend_id_form_plan_table_file_uploads {
+  fu_id        Int                             @id
+  form_plan_id Int?
+  fu_name      String?
+  plan         form_extend_id_form_plan_table? @relation(fields: [form_plan_id], references: [form_plan_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_ext_plan_file_to_plan")
+
+  @@map("form_extend/id/form_plan_table/file_uploads")
+}
+
+model form_research_owner {
+  form_own_id            Int                                         @id
+  form_own_code          String?
+  form_own_form_id       Int?
+  form_own_prefix        Int?
+  form_own_fullname      String?
+  form_own_lastname      String?
+  form_own_co_owner      String?
+  form_own_co_owner_type String?
+  form_own_ownertype     String?
+  form_own_co_prefix     Int?
+  form_own_co_name       String?
+  form_own_co_lastname   String?
+  form_own_co_idcard_no  String?
+  form_own_co_department String?
+  form_own_co_position   String?
+  form_own_co_tel        String?
+  form_own_co_mail       String?
+  form_own_status        String?
+  form_own_checked_by    Int?
+  form_own_checked_date  DateTime?                                   @db.Timestamp(6)
+  form_own_date_approve  DateTime?                                   @db.Date
+  form_own_form_plan_id  String?
+  is_ownership           Int?
+  form_own_create_by     Int?
+  form_own_created_at    DateTime?                                   @db.Timestamp(6)
+  form_own_update_by     Int?
+  form_own_updated_at    DateTime?                                   @db.Timestamp(6)
+  form_own_deleted_at    DateTime?                                   @db.Timestamp(6)
+  form_own_send_date     DateTime?                                   @db.Timestamp(6)
+  form_own_deleted_by    Int?
+  form_new_id            Int?
+  form_own_form_name     String?
+  status                 Int?
+  fullname               String?
+  form_owner_name        String?
+  form_own_department    String?
+  is_ownership_status    String?
+  extends                form_extend[]
+  finding                form_new_findings?                          @relation(fields: [form_new_id], references: [form_new_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_owner_finding")
+  coPrefix               prefixs?                                    @relation("co_prefix", fields: [form_own_co_prefix], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_owner_coprefix")
+  prefix                 prefixs?                                    @relation("owner_prefix", fields: [form_own_prefix], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_owner_prefix")
+  uploads_contract       form_research_owner_file_uploads_contract[]
+  uploads_other          form_research_owner_file_uploads_other[]
+  uploads_plan           form_research_owner_file_uploads_plan[]
+  objectives             form_research_owner_objective[]
+  periods                form_research_owner_period[]
+  utilizations           form_utilization[]
+
+  @@map("form_research_owner")
+}
+
+model form_research_owner_objective {
+  id                    Int                  @id @default(autoincrement())
+  form_own_id           Int?
+  objective_desc        String?
+  utilization_form_desc String?
+  mechanism_desc        String?
+  owner                 form_research_owner? @relation(fields: [form_own_id], references: [form_own_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_owner_obj_owner")
+
+  @@map("form_research_owner/objective")
+}
+
+model form_research_owner_period {
+  id               Int                  @id @default(autoincrement())
+  form_own_id      Int?
+  period_range     String?
+  activity         String?
+  expected_outcome String?
+  owner            form_research_owner? @relation(fields: [form_own_id], references: [form_own_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_owner_period_owner")
+
+  @@map("form_research_owner/period")
+}
+
+model form_research_owner_file_uploads_plan {
+  fu_id                 Int                  @id
+  form_own_id           Int?
+  fu_name               String?
+  fu_path               String?
+  fu_ext                String?
+  fu_mime               String?
+  fu_size               Int?
+  create_by             String?
+  created_at            DateTime?            @db.Timestamp(6)
+  update_by             String?
+  updated_at            DateTime?            @db.Timestamp(6)
+  url                   String?
+  pivot_uploadable_id   Int?
+  pivot_fu_id           Int?
+  pivot_uploadable_type String?
+  owner                 form_research_owner? @relation(fields: [form_own_id], references: [form_own_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_owner_fileplan_owner")
+
+  @@map("form_research_owner/file_uploads_plan")
+}
+
+model form_research_owner_file_uploads_contract {
+  fu_id                 Int                  @id
+  form_own_id           Int?
+  fu_name               String?
+  fu_path               String?
+  fu_ext                String?
+  fu_mime               String?
+  fu_size               Int?
+  create_by             String?
+  created_at            DateTime?            @db.Timestamp(6)
+  update_by             String?
+  updated_at            DateTime?            @db.Timestamp(6)
+  url                   String?
+  pivot_uploadable_id   Int?
+  pivot_fu_id           Int?
+  pivot_uploadable_type String?
+  owner                 form_research_owner? @relation(fields: [form_own_id], references: [form_own_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_owner_filecontract_owner")
+
+  @@map("form_research_owner/file_uploads_contract")
+}
+
+model form_research_owner_file_uploads_other {
+  fu_id                 Int                  @id
+  form_own_id           Int?
+  fu_name               String?
+  fu_path               String?
+  fu_ext                String?
+  fu_mime               String?
+  fu_size               Int?
+  create_by             String?
+  created_at            DateTime?            @db.Timestamp(6)
+  update_by             String?
+  updated_at            DateTime?            @db.Timestamp(6)
+  url                   String?
+  pivot_uploadable_id   Int?
+  pivot_fu_id           Int?
+  pivot_uploadable_type String?
+  owner                 form_research_owner? @relation(fields: [form_own_id], references: [form_own_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_owner_fileother_owner")
+
+  @@map("form_research_owner/file_uploads_other")
+}
+
+model form_research_plan {
+  form_plan_id                Int                               @id
+  form_plan_form_new_id       Int?
+  form_plan_code              String?
+  form_plan_fullname          String?
+  form_plan_lastname          String?
+  form_plan_prefix            Int?
+  form_plan_idcard            String?
+  form_plan_department        String?
+  form_plan_position          String?
+  form_plan_tel               String?
+  form_plan_email             String?
+  form_plan_type_status       String?
+  form_plan_type_status_other String?
+  form_plan_period            Int?
+  form_plan_start_date        DateTime?                         @db.Date
+  form_plan_usage_value       Decimal?                          @db.Decimal(18, 2)
+  form_plan_target            String?
+  form_plan_target_check      String?
+  form_plan_target_other      String?
+  form_plan_user_target       String?
+  form_plan_result            String?
+  form_plan_result_check      String?
+  form_plan_result_other      String?
+  form_plan_user_result       String?
+  form_plan_status            String?
+  form_plan_checked_by        Int?
+  form_plan_checked_date      DateTime?                         @db.Timestamp(6)
+  form_plan_form_own_id       Int?
+  form_plan_form_plan_id      Int?
+  form_plan_type              String?
+  form_plan_reason            String?
+  form_plan_condition         Int?
+  form_plan_create_by         Int?
+  form_plan_created_at        DateTime?                         @db.Timestamp(6)
+  form_plan_update_by         Int?
+  form_plan_updated_at        DateTime?                         @db.Timestamp(6)
+  form_plan_deleted_at        DateTime?                         @db.Timestamp(6)
+  import_by                   Int?
+  fullname                    String?
+  finding                     form_new_findings?                @relation(fields: [form_plan_form_new_id], references: [form_new_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_plan_finding")
+  prefix                      prefixs?                          @relation(fields: [form_plan_prefix], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_plan_prefix")
+  uploads                     form_research_plan_file_uploads[]
+  objectives                  form_research_plan_objective[]
+  periods                     form_research_plan_period[]
+  utilizations                form_utilization[]
+
+  @@map("form_research_plan")
+}
+
+model form_research_plan_objective {
+  id                    Int                @id @default(autoincrement())
+  form_plan_id          Int
+  objective_desc        String?
+  utilization_form_desc String?
+  mechanism_desc        String?
+  plan                  form_research_plan @relation(fields: [form_plan_id], references: [form_plan_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_plan_obj_plan")
+
+  @@map("form_research_plan/objective")
+}
+
+model form_research_plan_period {
+  id               Int                @id @default(autoincrement())
+  form_plan_id     Int
+  period_range     String?
+  activity         String?
+  expected_outcome String?
+  plan             form_research_plan @relation(fields: [form_plan_id], references: [form_plan_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_plan_period_plan")
+
+  @@map("form_research_plan/period")
+}
+
+model form_research_plan_file_uploads {
+  fu_id                 Int                @id
+  form_plan_id          Int
+  fu_name               String?
+  fu_path               String?
+  fu_ext                String?
+  fu_mime               String?
+  fu_size               Int?
+  create_by             String?
+  created_at            DateTime?          @db.Timestamp(6)
+  update_by             String?
+  updated_at            DateTime?          @db.Timestamp(6)
+  url                   String?
+  pivot_uploadable_id   Int?
+  pivot_fu_id           Int?
+  pivot_uploadable_type String?
+  plan                  form_research_plan @relation(fields: [form_plan_id], references: [form_plan_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_plan_file_plan")
+
+  @@map("form_research_plan/file_uploads")
+}
+
+model form_utilization {
+  form_utilization_id                Int                       @id
+  form_new_id                        Int?
+  form_own_id                        Int?
+  form_plan_id                       Int?
+  is_type                            String?
+  is_uti_type                        String?
+  utilization_code                   String?
+  utilization_no                     Int?
+  utilization_fullname               String?
+  current_status                     String?
+  current_other                      String?
+  is_use                             String?
+  objective                          String?
+  utilization_type                   String?
+  utilization_other                  String?
+  utilization_type_detail1           String?
+  utilization_type_detail2           String?
+  kind_of_use                        String?
+  kind_of_use_other                  String?
+  kind_of_use_other2                 String?
+  kind_of_use_other3                 String?
+  utilization_period                 String?
+  start_date                         DateTime?                 @db.Date
+  utilization_detail                 String?
+  protection                         String?
+  protection_other                   String?
+  utilization_amount                 String?
+  utilization_amount_type            String?
+  utilization_amount_type_other      String?
+  utilization_amount_more            String?
+  utilization_amount_type_more       String?
+  utilization_amount_type_other_more String?
+  utilization_remark                 String?
+  utilization_money                  Decimal?                  @db.Decimal(18, 2)
+  utilization_money2                 Decimal?                  @db.Decimal(18, 2)
+  utilization_money3                 Decimal?                  @db.Decimal(18, 2)
+  utilization_money4                 Decimal?                  @db.Decimal(18, 2)
+  utilization_remark2                String?
+  utilization_sum1                   Decimal?                  @db.Decimal(18, 2)
+  utilization_sum2                   Decimal?                  @db.Decimal(18, 2)
+  utilization_data                   String?
+  utilization_status                 String?
+  utilization_success                String?
+  is_income                          String?
+  is_status                          Int?
+  allocate_income_type               Int?
+  utilization_condition              Int?
+  utilization_checked_by             Int?
+  utilization_checked_date           DateTime?                 @db.Timestamp(6)
+  created_at                         DateTime?                 @db.Timestamp(6)
+  updated_at                         DateTime?                 @db.Timestamp(6)
+  deleted_at                         DateTime?                 @db.Timestamp(6)
+  create_by                          Int?
+  update_by                          Int?
+  delete_by                          Int?
+  status                             String?
+  finding                            form_new_findings?        @relation(fields: [form_new_id], references: [form_new_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_uti_finding")
+  owner                              form_research_owner?      @relation(fields: [form_own_id], references: [form_own_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_uti_owner")
+  plan                               form_research_plan?       @relation(fields: [form_plan_id], references: [form_plan_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_uti_plan")
+  periods                            form_utilization_period[]
+
+  @@map("form_utilization")
+}
+
+model form_utilization_period {
+  id                  Int              @id @default(autoincrement())
+  form_utilization_id Int
+  period_range        String?
+  utilization         form_utilization @relation(fields: [form_utilization_id], references: [form_utilization_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_utip_period_uti")
+
+  @@map("form_utilization/period")
+}
